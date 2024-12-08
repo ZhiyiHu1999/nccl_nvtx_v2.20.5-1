@@ -33,6 +33,8 @@
     0xffcddc39, 
     0xff8bc34a};
   nvtxEventAttributes_t eventAttrib_Coll = {0};
+  nvtxEventAttributes_t eventAttrib_P2P = {0};
+  nvtxEventAttributes_t eventAttrib_Check = {0};
 #endif
 
 NCCL_PARAM(L1SharedMemoryCarveout, "L1_SHARED_MEMORY_CARVEOUT", 0);
@@ -578,6 +580,26 @@ static ncclResult_t addP2pToPlan(
   // with channel->nWork equal to one plus the work index this p2p settled in.
   proxyOp.opCount = uint64_t(plan->channels[channelId].nWork)<<1 | 1;
   NCCLCHECK(addProxyOpIfNeeded(comm, plan, &proxyOp));
+
+#if defined(ENABLE_ENQUEUE_NVTX)
+    char nvtxMsg_P2P[256];
+    snprintf(nvtxMsg_P2P, sizeof(nvtxMsg_P2P), 
+                    "%ld Bytes -> Proto %d nthreads %d chunkSize %d", 
+                    info.nBytes, 
+                    info.protocol, 
+                    info.nThreads,
+                    info.chunkSize);
+
+    eventAttrib_P2P.version = NVTX_VERSION;
+    eventAttrib_P2P.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    eventAttrib_P2P.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    eventAttrib_P2P.colorType = NVTX_COLOR_ARGB;
+    eventAttrib_P2P.message.ascii = nvtxMsg_P2P;
+    eventAttrib_P2P.color = colors[1];
+
+    nvtxMarkEx(&eventAttrib_P2P);
+#endif
+
   return ncclSuccess;
 }
 
@@ -792,6 +814,25 @@ static ncclResult_t scheduleCollTasksToPlan(
           }
         }
       } // end of aggInfo
+
+#if defined(ENABLE_ENQUEUE_NVTX)
+      char nvtxMsg_Coll[256];
+      snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
+                      "%ld Bytes -> Algo %d proto %d nThreads %d", 
+                      collInfo->nBytes, 
+                      collInfo->algorithm, 
+                      collInfo->protocol, 
+                      collInfo->nThreads);
+
+      eventAttrib_Coll.version = NVTX_VERSION;
+      eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+      eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
+      eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
+      eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
+      eventAttrib_Coll.color = colors[0];
+
+      nvtxMarkEx(&eventAttrib_Coll);
+#endif 
 
       if (collInfo->algorithm == NCCL_ALGO_NVLS || collInfo->algorithm == NCCL_ALGO_NVLS_TREE) {
         usableChannels = std::max(usableChannels, comm->nvlsChannels);
@@ -1469,6 +1510,26 @@ static ncclResult_t topoGetAlgoInfo(struct ncclInfo* collInfo, int collNetSuppor
   if (comm->nRanks == 1) {
     collInfo->algorithm = NCCL_ALGO_RING;
     collInfo->protocol = NCCL_PROTO_SIMPLE;
+
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//     char nvtxMsg_Coll[256];
+//     snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
+//                     "%ld Bytes -> Algo %d proto %d time %d", 
+//                     collInfo->nBytes, 
+//                     collInfo->algorithm, 
+//                     collInfo->protocol, 
+//                     0);
+
+//     eventAttrib_Coll.version = NVTX_VERSION;
+//     eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//     eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//     eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
+//     eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
+//     eventAttrib_Coll.color = colors[0];
+
+//     nvtxMarkEx(&eventAttrib_Coll);
+// #endif
+
   }
   else if (collInfo->algorithm == NCCL_ALGO_UNDEF || collInfo->protocol == NCCL_PROTO_UNDEF) {
     float minTime = 3600000000.0; // Hopefully no operation will take an hour to complete.
@@ -1517,26 +1578,46 @@ static ncclResult_t topoGetAlgoInfo(struct ncclInfo* collInfo, int collNetSuppor
     if (comm->rank == 0) INFO(NCCL_TUNING, "%ld Bytes -> Algo %d proto %d time %f", collInfo->nBytes, collInfo->algorithm, collInfo->protocol, minTime);
     TRACE(NCCL_COLL, "%ld Bytes -> Algo %d proto %d time %f", collInfo->nBytes, collInfo->algorithm, collInfo->protocol, minTime);
 
-#if defined(ENABLE_ENQUEUE_NVTX)
-    char nvtxMsg_Coll[256];
-    snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
-                    "%ld Bytes -> Algo %d proto %d time %f", 
-                    collInfo->nBytes, 
-                    collInfo->algorithm, 
-                    collInfo->protocol, 
-                    minTime);
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//     char nvtxMsg_Coll[256];
+//     snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
+//                     "%ld Bytes -> Algo %d proto %d time %f", 
+//                     collInfo->nBytes, 
+//                     collInfo->algorithm, 
+//                     collInfo->protocol, 
+//                     minTime);
 
-    eventAttrib_Coll.version = NVTX_VERSION;
-    eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
-    eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
-    eventAttrib_Coll.color = colors[0];
+//     eventAttrib_Coll.version = NVTX_VERSION;
+//     eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//     eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//     eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
+//     eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
+//     eventAttrib_Coll.color = colors[0];
 
-    nvtxMarkEx(&eventAttrib_Coll);
-#endif
+//     nvtxMarkEx(&eventAttrib_Coll);
+// #endif
 
   }
+
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//   char nvtxMsg_Coll[256];
+//   snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
+//                   "%ld Bytes -> Algo %d proto %d nThreads %d time %f", 
+//                   collInfo->nBytes, 
+//                   collInfo->algorithm, 
+//                   collInfo->protocol, 
+//                   collInfo->nThreads,
+//                   8.1);
+
+//   eventAttrib_Coll.version = NVTX_VERSION;
+//   eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//   eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//   eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
+//   eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
+//   eventAttrib_Coll.color = colors[0];
+
+//   nvtxMarkEx(&eventAttrib_Coll);
+// #endif  
 
   return ncclSuccess;
 }
@@ -1948,6 +2029,22 @@ static ncclResult_t taskAppend(struct ncclComm* comm, struct ncclInfo* info) {
 
     if (comm->nRanks == 1) {
       NCCLCHECK(ncclLaunchOneRank(info->recvbuff, info->sendbuff, info->count, info->opFull, info->datatype, info->stream));
+
+#if defined(ENABLE_ENQUEUE_NVTX)
+      char nvtxMsg_Check[256];
+      snprintf(nvtxMsg_Check, sizeof(nvtxMsg_Check), 
+                      "Not executed in ncclkernel: comm->nRanks == 1");
+
+      eventAttrib_Check.version = NVTX_VERSION;
+      eventAttrib_Check.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+      eventAttrib_Check.messageType = NVTX_MESSAGE_TYPE_ASCII;
+      eventAttrib_Check.colorType = NVTX_COLOR_ARGB;
+      eventAttrib_Check.message.ascii = nvtxMsg_Check;
+      eventAttrib_Check.color = colors[1];
+
+      nvtxMarkEx(&eventAttrib_Check);
+#endif
+
       return ncclSuccess;
     } else {
       // Must be in thread local group before tasks can be alloc'd in `comm->memScoped`.

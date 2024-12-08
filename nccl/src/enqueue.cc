@@ -1533,7 +1533,7 @@ static ncclResult_t topoGetAlgoInfo(struct ncclInfo* collInfo, int collNetSuppor
     eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
     eventAttrib_Coll.color = colors[0];
 
-    nvtxRangePushEx(&eventAttrib_Coll);
+    nvtxMarkEx(&eventAttrib_Coll);
 #endif
 
   }

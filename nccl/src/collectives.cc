@@ -42,7 +42,7 @@ ncclResult_t ncclAllGather(const void* sendbuff, void* recvbuff, size_t sendcoun
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllGather[256];
   snprintf(nvtxMsg_AllGather, sizeof(nvtxMsg_AllGather), 
-                  "ncclAllGather(): comm %u, stream: %u, data_size: %zu", 
+                  "ncclAllGather(): comm %p, stream %p, data_size %zu", 
                   comm, 
                   stream, 
                   sendcount * ncclTypeSize(datatype));
@@ -86,7 +86,7 @@ ncclResult_t ncclAllReduce(const void* sendbuff, void* recvbuff, size_t count,
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllReduce[256];
   snprintf(nvtxMsg_AllReduce, sizeof(nvtxMsg_AllReduce), 
-                  "ncclAllReduce(): comm %u, stream: %u, data_size: %zu, red_op: %d", 
+                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, red_op %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
@@ -137,7 +137,7 @@ ncclResult_t ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, n
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Broadcast[256];
   snprintf(nvtxMsg_Broadcast, sizeof(nvtxMsg_Broadcast), 
-                  "ncclBroadcast(): comm %u, stream: %u, data_size: %zu, root: %d", 
+                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, root %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
@@ -193,7 +193,7 @@ ncclResult_t ncclReduce(const void* sendbuff, void* recvbuff, size_t count,
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Reduce[256];
   snprintf(nvtxMsg_Reduce, sizeof(nvtxMsg_Reduce), 
-                  "ncclReduce(): comm %u, stream: %u, data_size: %zu, red_op: %d, root: %d", 
+                  "ncclReduce(): comm %p, stream %p, data_size %zu, red_op %d, root %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
@@ -246,7 +246,7 @@ ncclResult_t ncclReduceScatter(const void* sendbuff, void* recvbuff, size_t recv
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_ReduceScatter[256];
   snprintf(nvtxMsg_ReduceScatter, sizeof(nvtxMsg_ReduceScatter), 
-                  "ncclReduceScatter(): comm %u, stream: %u, data_size: %zu, red_op: %d", 
+                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, red_op %d", 
                   comm, 
                   stream, 
                   recvcount * ncclTypeSize(datatype),
@@ -305,8 +305,9 @@ ncclResult_t ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatyp
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Send[256];
   snprintf(nvtxMsg_Send, sizeof(nvtxMsg_Send), 
-                  "ncclSend(): comm %p, data_size: %zu, peer: %d", 
+                  "ncclSend(): comm %p, stream %p, data_size %zu, receiver_rank: %d", 
                   comm, 
+                  stream,
                   count * ncclTypeSize(datatype), 
                   peer);
 
@@ -346,8 +347,9 @@ ncclResult_t ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Recv[256];
   snprintf(nvtxMsg_Recv, sizeof(nvtxMsg_Recv), 
-                  "ncclRecv(): comm %p, data_size: %zu, peer: %d", 
+                  "ncclRecv(): comm %p, stream %p, data_size: %zu, sender_rank %d", 
                   comm, 
+                  stream,
                   count * ncclTypeSize(datatype), 
                   peer);
 

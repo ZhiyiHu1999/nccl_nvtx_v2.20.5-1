@@ -1,0 +1,4 @@
+nccl/build/
+nccl/build/lib/*.a
+nccl/build/lib/*.so*
+nccl/build/obj/

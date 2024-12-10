@@ -33,8 +33,10 @@
     0xffcddc39, 
     0xff8bc34a};
   nvtxEventAttributes_t eventAttrib_Coll = {0};
-  nvtxEventAttributes_t eventAttrib_P2P = {0};
   nvtxEventAttributes_t eventAttrib_Check = {0};
+
+  nvtxEventAttributes_t eventAttrib_WorkElemColl = {0};
+  nvtxEventAttributes_t eventAttrib_WorkElemP2P = {0};
 #endif
 
 NCCL_PARAM(L1SharedMemoryCarveout, "L1_SHARED_MEMORY_CARVEOUT", 0);
@@ -92,6 +94,29 @@ ncclResult_t ncclInitKernelsForDevice(int cudaArch, size_t* maxStackSize) {
 static void appendWorkElemColl(
     struct ncclComm* comm, struct ncclKernelPlan* plan, int channelId,
     int funcIndex, struct ncclWorkElem const *elem) {
+
+#if defined(ENABLE_ENQUEUE_NVTX)
+    char nvtxMsg_WorkElemColl[256];
+    snprintf(nvtxMsg_WorkElemColl, sizeof(nvtxMsg_WorkElemColl), 
+                    "nWarps %d count %lu redOpArg %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu", 
+                    elem->nWarps, 
+                    elem->count, 
+                    elem->redOpArg, 
+                    elem->chunkCount, 
+                    elem->workCount, 
+                    elem->lastChunkCount,
+                    elem->workOffset);
+
+    eventAttrib_WorkElemColl.version = NVTX_VERSION;
+    eventAttrib_WorkElemColl.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    eventAttrib_WorkElemColl.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    eventAttrib_WorkElemColl.colorType = NVTX_COLOR_ARGB;
+    eventAttrib_WorkElemColl.message.ascii = nvtxMsg_WorkElemColl;
+    eventAttrib_WorkElemColl.color = colors[0];
+
+    nvtxMarkEx(&eventAttrib_WorkElemColl);
+#endif
+
   struct ncclKernelPlan::Channel* chan = &plan->channels[channelId];
   struct ncclWorkList* q = ncclIntruQueueTail(&chan->workQueue);
   if (q && funcIndex == q->work.header.funcIndex
@@ -163,6 +188,28 @@ static void appendWorkElemP2p(
     struct ncclComm* comm, struct ncclKernelPlan* plan, int channelId,
     struct ncclWorkElemP2p const *elem, bool fuseOk
   ) {
+
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//   char nvtxMsg_WorkElemP2P[256];
+//   snprintf(nvtxMsg_WorkElemP2P, sizeof(nvtxMsg_WorkElemP2P), 
+//                   "nWarps %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d", 
+//                   elem->nWarps, 
+//                   elem->peer, 
+//                   elem->proto, 
+//                   elem->countHi32,
+//                   elem->countLo32,
+//                   elem->chunkSize);
+
+//   eventAttrib_WorkElemP2P.version = NVTX_VERSION;
+//   eventAttrib_WorkElemP2P.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//   eventAttrib_WorkElemP2P.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//   eventAttrib_WorkElemP2P.colorType = NVTX_COLOR_ARGB;
+//   eventAttrib_WorkElemP2P.message.ascii = nvtxMsg_WorkElemP2P;
+//   eventAttrib_WorkElemP2P.color = colors[0];
+
+//   nvtxMarkEx(&eventAttrib_WorkElemP2P);
+// #endif
+
   int funcIndex = ncclDevFuncId_P2p();
   struct ncclKernelPlan::Channel* chan = &plan->channels[channelId];
   struct ncclWorkList* q = ncclIntruQueueTail(&chan->workQueue);
@@ -582,23 +629,26 @@ static ncclResult_t addP2pToPlan(
   NCCLCHECK(addProxyOpIfNeeded(comm, plan, &proxyOp));
 
 #if defined(ENABLE_ENQUEUE_NVTX)
-    char nvtxMsg_P2P[256];
-    snprintf(nvtxMsg_P2P, sizeof(nvtxMsg_P2P), 
-                    "%ld Bytes -> Proto %d nthreads %d chunkSize %d", 
-                    info.nBytes, 
-                    info.protocol, 
-                    info.nThreads,
-                    info.chunkSize);
+  char nvtxMsg_WorkElemP2P[256];
+  snprintf(nvtxMsg_WorkElemP2P, sizeof(nvtxMsg_WorkElemP2P), 
+                  "Bytes %lu nWarps %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d", 
+                  bytes, 
+                  elem.nWarps, 
+                  elem.peer, 
+                  info.protocol, 
+                  elem.countHi32,
+                  elem.countLo32,
+                  elem.chunkSize);
 
-    eventAttrib_P2P.version = NVTX_VERSION;
-    eventAttrib_P2P.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    eventAttrib_P2P.messageType = NVTX_MESSAGE_TYPE_ASCII;
-    eventAttrib_P2P.colorType = NVTX_COLOR_ARGB;
-    eventAttrib_P2P.message.ascii = nvtxMsg_P2P;
-    eventAttrib_P2P.color = colors[1];
+  eventAttrib_WorkElemP2P.version = NVTX_VERSION;
+  eventAttrib_WorkElemP2P.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+  eventAttrib_WorkElemP2P.messageType = NVTX_MESSAGE_TYPE_ASCII;
+  eventAttrib_WorkElemP2P.colorType = NVTX_COLOR_ARGB;
+  eventAttrib_WorkElemP2P.message.ascii = nvtxMsg_WorkElemP2P;
+  eventAttrib_WorkElemP2P.color = colors[0];
 
-    nvtxMarkEx(&eventAttrib_P2P);
-#endif
+  nvtxMarkEx(&eventAttrib_WorkElemP2P);
+#endif  
 
   return ncclSuccess;
 }

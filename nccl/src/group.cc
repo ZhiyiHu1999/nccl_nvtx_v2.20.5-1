@@ -29,6 +29,7 @@
     0xff03a9f4};
   nvtxEventAttributes_t eventAttrib_groupstart = {0};
   nvtxEventAttributes_t eventAttrib_groupend = {0};
+  nvtxEventAttributes_t eventAttrib_group = {0};
 #endif
 
 __thread int ncclGroupDepth = 0; // depth of ncclGroupStart nesting
@@ -221,7 +222,28 @@ static ncclResult_t doLaunches(struct ncclComm* head) {
             comm->unlaunchedPlansHead = plan->next;
             CUDACHECKGOTO(cudaSetDevice(comm->cudaDev), result, failure);
             NCCLCHECKGOTO(ncclLaunchKernelBefore_NoUncapturedCuda(comm, plan), result, failure);
+
+#if defined(ENABLE_API_NVTX)
+            char nvtxMsg_Group[256];
+            snprintf(nvtxMsg_Group, sizeof(nvtxMsg_Group), 
+                            "ncclLaunchKernel()");
+
+            eventAttrib_group.version = NVTX_VERSION;
+            eventAttrib_group.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+            eventAttrib_group.messageType = NVTX_MESSAGE_TYPE_ASCII;
+            eventAttrib_group.colorType = NVTX_COLOR_ARGB;
+            eventAttrib_group.message.ascii = nvtxMsg_Group;
+            eventAttrib_group.color = colors[7];
+
+            nvtxRangePushEx(&eventAttrib_group);
+#endif
+
             NCCLCHECKGOTO(ncclLaunchKernel(comm, plan), result, failure);
+
+#if defined(ENABLE_API_NVTX)
+            nvtxRangePop();
+#endif
+
           }
           // Barrier reduction input indicates if we require further rounds.
           if (useBarrier) ncclCommIntraBarrierIn(comm, comm->unlaunchedPlansHead != nullptr ? 1 : 0);

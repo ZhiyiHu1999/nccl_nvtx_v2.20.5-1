@@ -1581,7 +1581,7 @@ static ncclResult_t ncclCommInitRankFunc(struct ncclAsyncJob* job_) {
   eventAttrib_init.message.ascii = nvtxMsg_Init;
   eventAttrib_init.color = nvtx_colors[0];
 
-  nvtxMarkEx(&eventAttrib_init);
+  nvtxRangePushEx(&eventAttrib_init);
 #endif   
 
   NCCLCHECKGOTO(initTransportsRank(comm, job->parent), res, fail);
@@ -1607,6 +1607,11 @@ static ncclResult_t ncclCommInitRankFunc(struct ncclAsyncJob* job_) {
 
 
   INFO(NCCL_INIT,"comm %p rank %d nranks %d cudaDev %d nvmlDev %d busId %lx commId 0x%llx - Init COMPLETE", comm, comm->rank, comm->nRanks, comm->cudaDev, comm->nvmlDev, comm->busId, (unsigned long long)hashUniqueId(job->commId));
+
+#if defined(ENABLE_API_NVTX)
+  nvtxRangePop();
+#endif
+
 exit:
   if (job->newcomm) {
     /* assign it to user pointer. */

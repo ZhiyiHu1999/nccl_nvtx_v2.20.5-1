@@ -36,6 +36,7 @@
   nvtxEventAttributes_t eventAttrib_Check = {0};
 
   nvtxEventAttributes_t eventAttrib_WorkElemColl = {0};
+  // nvtxEventAttributes_t eventAttrib_SetCollWorkElem = {0};
   nvtxEventAttributes_t eventAttrib_WorkElemP2P = {0};
 #endif
 
@@ -1810,6 +1811,25 @@ static ncclResult_t initCollWorkElem(struct ncclInfo* collInfo, struct ncclWorkE
 }
 
 static ncclResult_t setCollWorkElem(uint64_t workCount, uint64_t workOffset, size_t lastChunkCount, struct ncclWorkElem* work) {
+
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//   char nvtxMsg_SetCollWorkElem[256];
+//   snprintf(nvtxMsg_SetCollWorkElem, sizeof(nvtxMsg_SetCollWorkElem), 
+//                   "workCount %lu lastChunkCount %lu workOffset %lu", 
+//                   workCount, 
+//                   lastChunkCount, 
+//                   workOffset);
+
+//   eventAttrib_SetCollWorkElem.version = NVTX_VERSION;
+//   eventAttrib_SetCollWorkElem.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//   eventAttrib_SetCollWorkElem.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//   eventAttrib_SetCollWorkElem.colorType = NVTX_COLOR_ARGB;
+//   eventAttrib_SetCollWorkElem.message.ascii = nvtxMsg_SetCollWorkElem;
+//   eventAttrib_SetCollWorkElem.color = colors[0];
+
+//   nvtxMarkEx(&eventAttrib_SetCollWorkElem);
+// #endif
+
   work->workCount = workCount;
   work->workOffset = workOffset;
   work->lastChunkCount = lastChunkCount;

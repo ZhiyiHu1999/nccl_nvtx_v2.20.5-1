@@ -77,6 +77,15 @@ struct ncclProxySubArgs {
   void* profilingEvents[NCCL_STEPS];
   void* recvRequestsCache[NCCL_STEPS];
   int recvRequestsSubCount;
+
+#if defined(ENABLE_NET_NVTX)
+  int nvtxSizesFifo[NCCL_STEPS];
+  int nvtxSendFifo[NCCL_STEPS];
+  // int nvtxSendTestFifo[NCCL_STEPS];
+  int nvtxRecvFifo[NCCL_STEPS];
+  // int nvtxRecvTestFifo[NCCL_STEPS];
+#endif
+
 };
 
 struct ncclProxyArgs {

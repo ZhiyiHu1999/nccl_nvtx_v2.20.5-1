@@ -14,6 +14,15 @@
 #include "p2p.h"
 #include "profiler.h"
 
+#if defined(ENABLE_NET_NVTX)
+#include "nvtx3/nvToolsExt.h"
+#endif
+
+#if defined(ENABLE_NET_NVTX)
+  const uint32_t colors[] = { 0xff00ff00, 0xff0000ff, 0xffffff00, 0xffff00ff, 0xff00ffff, 0xffff0000, 0xffffffff };
+  nvtxEventAttributes_t eventAttrib = {0};
+#endif
+
 static_assert(sizeof(ncclNetHandle_t) <= CONNECT_SIZE, "NET Connect info is too large");
 
 #define NCCL_NET_MAP_HOSTMEM 0
@@ -1084,6 +1093,11 @@ static ncclResult_t sendProxyProgress(struct ncclProxyState* proxyState, struct 
         if ((sub->reg || connFifo[buffSlot].size != -1) && ((*recvTail > tail) || p == NCCL_PROTO_LL)) {
           // We have something to receive, let's check if it's completely ready.
           int size = sub->reg ? std::min(MAX_NET_SIZE, sub->nbytes) : connFifo[buffSlot].size;
+
+#if defined(ENABLE_NET_NVTX)
+          sub->nvtxSizesFifo[buffSlot] = size;
+#endif
+
           bool shared = (p == NCCL_PROTO_SIMPLE) && resources->shared;
           char* buff = shared ? localBuff+connFifo[buffSlot].offset : localBuff+buffSlot*stepSize;
           int ready = 1;
@@ -1114,8 +1128,40 @@ static ncclResult_t sendProxyProgress(struct ncclProxyState* proxyState, struct 
           }
           if (ready) {
             // Data is ready, try to send.
+
+#if defined(ENABLE_NET_NVTX)
+            char nvtxMsg[256];
+            snprintf(nvtxMsg, sizeof(nvtxMsg), 
+                "ncclNetIsend(): Data_Size: %d, Sender_Rank: %d, Receiver_Rank: %d, Channel_ID: %d, Sequence: %d", 
+                size,
+                resources->tpRank, 
+                resources->tpRemoteRank, 
+                sub->channelId, 
+                (int) (sub->transmitted));
+                // (int) (sub->base+sub->transmitted));
+
+            eventAttrib.version = NVTX_VERSION;
+            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+            eventAttrib.colorType = NVTX_COLOR_ARGB;
+            eventAttrib.message.ascii = nvtxMsg;
+            eventAttrib.color = colors[0];
+
+            nvtxRangePushEx(&eventAttrib);
+#endif
+
             NCCLCHECK(proxyState->ncclNet->isend(resources->netSendComm, buff, size, resources->tpRank, sub->mhandle, sub->requests+buffSlot));
+
+#if defined(ENABLE_NET_NVTX)
+            nvtxRangePop();
+#endif
+
             if (sub->requests[buffSlot] != NULL) {
+
+#if defined(ENABLE_NET_NVTX)
+              sub->nvtxSendFifo[buffSlot] = 0;
+#endif
+
               TRACE(NCCL_NET, "sendProxy [%ld/%d] Isend posted, req %p, size %d, proto %d, myRank %d, channelId %d", sub->transmitted, buffSlot, sub->requests[buffSlot], size, p, proxyState->tpRank, sub->channelId);
               sub->transmitted += args->sliceSteps;
               for (uint64_t step=sub->transmitted-args->sliceSteps; step<sub->transmitted; step++) ncclProfilingRecord(args, s, step, ncclProxyProfileSendWait);
@@ -1130,8 +1176,59 @@ static ncclResult_t sendProxyProgress(struct ncclProxyState* proxyState, struct 
         int done;
         int size;
         int buffSlot = (sub->base+sub->done)%NCCL_STEPS;
+        int test_seq = sub->done;
+
+#if defined(ENABLE_NET_NVTX)
+        char nvtxMsg[256];
+        snprintf(nvtxMsg, sizeof(nvtxMsg), 
+            "ncclNetSendTest()");
+
+        eventAttrib.version = NVTX_VERSION;
+        eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+        eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+        eventAttrib.colorType = NVTX_COLOR_ARGB;
+        eventAttrib.message.ascii = nvtxMsg;
+        eventAttrib.color = colors[1];
+
+        nvtxRangePushEx(&eventAttrib);
+
+        if (sub->nvtxSendFifo[buffSlot] == 0) {  // The first net send test for the step, we do not care about the end time of the send test
+          sub->nvtxSendFifo[buffSlot] = 1;
+
+          char nvtxMsg[256];
+          snprintf(nvtxMsg, sizeof(nvtxMsg), 
+              "ncclNetSendTest(): Data_Size: %d, Sender_Rank: %d, Receiver_Rank: %d, Channel_ID: %d, Sequence: %d", 
+              sub->nvtxSizesFifo[buffSlot],
+              resources->tpRank, 
+              resources->tpRemoteRank, 
+              sub->channelId, 
+              test_seq);
+
+          eventAttrib.version = NVTX_VERSION;
+          eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+          eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+          eventAttrib.colorType = NVTX_COLOR_ARGB;
+          eventAttrib.message.ascii = nvtxMsg;
+          eventAttrib.color = colors[1];
+
+          nvtxMarkEx(&eventAttrib);
+        }
+#endif
+
         NCCLCHECK(proxyState->ncclNet->test(sub->requests[buffSlot], &done, &size));
+
+#if defined(ENABLE_NET_NVTX)
+        if(!done) {
+          nvtxRangePop();
+        }
+#endif
+
         if (done) {
+
+#if defined(ENABLE_NET_NVTX)
+          nvtxRangePop();
+#endif
+
           if (sub->reg) {
             if (size < sub->nbytes) {
               sub->buffer = ((char*)sub->buffer)+size;
@@ -1271,12 +1368,50 @@ static ncclResult_t recvProxyProgress(struct ncclProxyState* proxyState, struct 
         uint64_t step = subGroup->posted;
         struct recvNetResources* resources = (struct recvNetResources*) (subGroup->connection->transportResources);
         void** requestPtr = subGroup->requests+(step%NCCL_STEPS);
+
+#if defined(ENABLE_NET_NVTX)
+            char nvtxMsg[256];
+            snprintf(nvtxMsg, sizeof(nvtxMsg), "ncclNetIrecv()");
+
+            eventAttrib.version = NVTX_VERSION;
+            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+            eventAttrib.colorType = NVTX_COLOR_ARGB;
+            eventAttrib.message.ascii = nvtxMsg;
+            eventAttrib.color = colors[2];
+
+            nvtxRangePushEx(&eventAttrib);
+#endif
+
         NCCLCHECK(proxyState->ncclNet->irecv(resources->netRecvComm, subCount, ptrs, sizes, tags, mhandles, requestPtr));
         if (*requestPtr) {
           subGroup->recvRequestsCache[step%NCCL_STEPS] = *requestPtr;
           subGroup->recvRequestsSubCount = subCount;
           for (int i=0; i<subGroup->groupSize; i++) {
             struct ncclProxySubArgs* sub = subGroup+i;
+
+#if defined(ENABLE_NET_NVTX)
+            char nvtxMsg[256];
+            snprintf(nvtxMsg, sizeof(nvtxMsg), 
+                "ncclNetIrecv(): Data_Size: %d, Sender_Rank: %d, Receiver_Rank: %d, Channel_ID: %d, Sequence: %d", 
+                sizes[i],
+                resources->tpRemoteRank, 
+                resources->tpRank, 
+                sub->channelId, 
+                (int) step);
+            eventAttrib.version = NVTX_VERSION;
+            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+            eventAttrib.colorType = NVTX_COLOR_ARGB;
+            eventAttrib.message.ascii = nvtxMsg;
+            eventAttrib.color = colors[2];
+            nvtxMarkEx(&eventAttrib);
+
+            nvtxRangePop();
+
+            sub->nvtxRecvFifo[step%NCCL_STEPS] = 0;
+#endif
+
             sub->posted += args->sliceSteps;
             for (uint64_t step=sub->posted-args->sliceSteps; step<sub->posted; step++) ncclProfilingRecord(args, s+i, step, ncclProxyProfileRecvWait);
           }
@@ -1295,7 +1430,58 @@ static ncclResult_t recvProxyProgress(struct ncclProxyState* proxyState, struct 
         int sizes[NCCL_PROXY_MAX_SUBS];
         void* mhandles[NCCL_PROXY_MAX_SUBS];
         for (int i=0; i<NCCL_PROXY_MAX_SUBS; i++) sizes[i] = 0;
+
+#if defined(ENABLE_NET_NVTX)
+        char nvtxMsg[256];
+        snprintf(nvtxMsg, sizeof(nvtxMsg), "ncclNetRecvTest()");
+
+        eventAttrib.version = NVTX_VERSION;
+        eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+        eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+        eventAttrib.colorType = NVTX_COLOR_ARGB;
+        eventAttrib.message.ascii = nvtxMsg;
+        eventAttrib.color = colors[3];
+
+        nvtxRangePushEx(&eventAttrib);
+
+        for (int i=0; i<subGroup->groupSize; i++) {
+            struct ncclProxySubArgs* sub = subGroup + i;
+
+            if (sub->nvtxRecvFifo[step%NCCL_STEPS] == 0) {  // The first recv test for the step
+              sub->nvtxRecvFifo[step%NCCL_STEPS] = 1;
+              struct recvNetResources* resources = (struct recvNetResources*) subGroup->connection->transportResources;
+
+              char nvtxMsg[256];
+              snprintf(nvtxMsg, sizeof(nvtxMsg), 
+                  "ncclNetRecvTest(): Data_Size: %d, Sender_Rank: %d, Receiver_Rank: %d, Channel_ID: %d, Sequence: %d", 
+                  sizes[i],
+                  resources->tpRemoteRank, 
+                  resources->tpRank, 
+                  sub->channelId,
+                  (int) step);
+
+              eventAttrib.version = NVTX_VERSION;
+              eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+              eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+              eventAttrib.colorType = NVTX_COLOR_ARGB;
+              eventAttrib.message.ascii = nvtxMsg;
+              eventAttrib.color = colors[3];
+
+              nvtxMarkEx(&eventAttrib);
+                }
+              }
+#endif
+
         NCCLCHECK(proxyState->ncclNet->test(subGroup->requests[step%NCCL_STEPS], &done, sizes));
+
+#if defined(ENABLE_NET_NVTX)
+        if(!done) {
+          for (int i=0; i<subGroup->groupSize; i++) {
+            nvtxRangePop();
+          }
+        }
+#endif
+
         if (done) {
           int needFlush = 0;
           int totalSize = 0;
@@ -1303,6 +1489,28 @@ static ncclResult_t recvProxyProgress(struct ncclProxyState* proxyState, struct 
           for (int i=0; i<NCCL_PROXY_MAX_SUBS; i++) totalSize += sizes[i];
           for (int i=0; i<subGroup->groupSize; i++) {
             struct ncclProxySubArgs* sub = subGroup + i;
+
+#if defined(ENABLE_NET_NVTX)
+            struct recvNetResources* resources = (struct recvNetResources*) subGroup->connection->transportResources;
+            char nvtxMsg[256];
+            snprintf(nvtxMsg, sizeof(nvtxMsg), 
+                "ncclNetRecvTest(): Data_Size: %d, Sender_Rank: %d, Receiver_Rank: %d, Channel_ID: %d, Sequence: %d", 
+                sizes[i],
+                resources->tpRemoteRank, 
+                resources->tpRank, 
+                sub->channelId,
+                (int) step);
+            eventAttrib.version = NVTX_VERSION;
+            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII;
+            eventAttrib.colorType = NVTX_COLOR_ARGB;
+            eventAttrib.message.ascii = nvtxMsg;
+            eventAttrib.color = colors[3];
+            nvtxMarkEx(&eventAttrib);
+      
+            nvtxRangePop();
+#endif
+
             if (sub->received < sub->nsteps) {
               int size = sizes[subIndex++];
               if (sub->reg) {

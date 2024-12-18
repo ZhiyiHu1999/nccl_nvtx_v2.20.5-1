@@ -42,10 +42,11 @@ ncclResult_t ncclAllGather(const void* sendbuff, void* recvbuff, size_t sendcoun
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllGather[256];
   snprintf(nvtxMsg_AllGather, sizeof(nvtxMsg_AllGather), 
-                  "ncclAllGather(): comm %p, stream %p, data_size %zu", 
+                  "ncclAllGather(): comm %p, stream %p, data_size %zu, type_size %d", 
                   comm, 
                   stream, 
-                  sendcount * ncclTypeSize(datatype));
+                  sendcount * ncclTypeSize(datatype),
+                  ncclTypeSize(datatype));
 
   eventAttrib_allgather.version = NVTX_VERSION;
   eventAttrib_allgather.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -86,10 +87,11 @@ ncclResult_t ncclAllReduce(const void* sendbuff, void* recvbuff, size_t count,
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllReduce[256];
   snprintf(nvtxMsg_AllReduce, sizeof(nvtxMsg_AllReduce), 
-                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, red_op %d", 
+                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
+                  ncclTypeSize(datatype),
                   op);
 
   eventAttrib_allreduce.version = NVTX_VERSION;
@@ -137,10 +139,11 @@ ncclResult_t ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, n
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Broadcast[256];
   snprintf(nvtxMsg_Broadcast, sizeof(nvtxMsg_Broadcast), 
-                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, root %d", 
+                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, type_size %d, root %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
+                  ncclTypeSize(datatype), 
                   root);
 
   eventAttrib_broadcast.version = NVTX_VERSION;
@@ -193,10 +196,11 @@ ncclResult_t ncclReduce(const void* sendbuff, void* recvbuff, size_t count,
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Reduce[256];
   snprintf(nvtxMsg_Reduce, sizeof(nvtxMsg_Reduce), 
-                  "ncclReduce(): comm %p, stream %p, data_size %zu, red_op %d, root %d", 
+                  "ncclReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, root %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
+                  ncclTypeSize(datatype), 
                   op,
                   root);
 
@@ -246,10 +250,11 @@ ncclResult_t ncclReduceScatter(const void* sendbuff, void* recvbuff, size_t recv
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_ReduceScatter[256];
   snprintf(nvtxMsg_ReduceScatter, sizeof(nvtxMsg_ReduceScatter), 
-                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, red_op %d", 
+                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d", 
                   comm, 
                   stream, 
                   recvcount * ncclTypeSize(datatype),
+                  ncclTypeSize(datatype), 
                   op);
 
   eventAttrib_reducescatter.version = NVTX_VERSION;
@@ -305,10 +310,11 @@ ncclResult_t ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatyp
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Send[256];
   snprintf(nvtxMsg_Send, sizeof(nvtxMsg_Send), 
-                  "ncclSend(): comm %p, stream %p, data_size %zu, receiver_rank: %d", 
+                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank: %d", 
                   comm, 
                   stream,
                   count * ncclTypeSize(datatype), 
+                  ncclTypeSize(datatype), 
                   peer);
 
               eventAttrib_send.version = NVTX_VERSION;
@@ -347,10 +353,11 @@ ncclResult_t ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Recv[256];
   snprintf(nvtxMsg_Recv, sizeof(nvtxMsg_Recv), 
-                  "ncclRecv(): comm %p, stream %p, data_size: %zu, sender_rank %d", 
+                  "ncclRecv(): comm %p, stream %p, data_size %zu, type_size %d, sender_rank %d", 
                   comm, 
                   stream,
                   count * ncclTypeSize(datatype), 
+                  ncclTypeSize(datatype), 
                   peer);
 
               eventAttrib_recv.version = NVTX_VERSION;

@@ -36,6 +36,7 @@
   nvtxEventAttributes_t eventAttrib_Check = {0};
 
   nvtxEventAttributes_t eventAttrib_WorkElemColl = {0};
+  nvtxEventAttributes_t eventAttrib_CollInfo = {0};
   // nvtxEventAttributes_t eventAttrib_SetCollWorkElem = {0};
   nvtxEventAttributes_t eventAttrib_WorkElemP2P = {0};
 #endif
@@ -646,7 +647,7 @@ static ncclResult_t addP2pToPlan(
   eventAttrib_WorkElemP2P.messageType = NVTX_MESSAGE_TYPE_ASCII;
   eventAttrib_WorkElemP2P.colorType = NVTX_COLOR_ARGB;
   eventAttrib_WorkElemP2P.message.ascii = nvtxMsg_WorkElemP2P;
-  eventAttrib_WorkElemP2P.color = colors[0];
+  eventAttrib_WorkElemP2P.color = colors[1];
 
   nvtxMarkEx(&eventAttrib_WorkElemP2P);
 #endif  
@@ -880,7 +881,7 @@ static ncclResult_t scheduleCollTasksToPlan(
       eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
       eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
       eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
-      eventAttrib_Coll.color = colors[0];
+      eventAttrib_Coll.color = colors[2];
 
       nvtxMarkEx(&eventAttrib_Coll);
 #endif 
@@ -1922,6 +1923,27 @@ static ncclResult_t computeCollChunkInfo(struct ncclInfo* collInfo, size_t nByte
   collInfo->chunkSteps = chunkSteps;
   collInfo->sliceSteps = sliceSteps;
   collInfo->stepSize = stepSize;
+
+#if defined(ENABLE_ENQUEUE_NVTX)
+    char nvtxMsg_CollInfo[256];
+    snprintf(nvtxMsg_CollInfo, sizeof(nvtxMsg_CollInfo), 
+                    "chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d", 
+                    collInfo->chunkSize, 
+                    collInfo->chunkCount, 
+                    collInfo->chunkSteps,
+                    collInfo->sliceSteps, 
+                    collInfo->stepSize);
+
+    eventAttrib_CollInfo.version = NVTX_VERSION;
+    eventAttrib_CollInfo.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    eventAttrib_CollInfo.messageType = NVTX_MESSAGE_TYPE_ASCII;
+    eventAttrib_CollInfo.colorType = NVTX_COLOR_ARGB;
+    eventAttrib_CollInfo.message.ascii = nvtxMsg_CollInfo;
+    eventAttrib_CollInfo.color = colors[3];
+
+    nvtxMarkEx(&eventAttrib_CollInfo);
+#endif 
+
   return ncclSuccess;
 }
 
@@ -2110,7 +2132,7 @@ static ncclResult_t taskAppend(struct ncclComm* comm, struct ncclInfo* info) {
       eventAttrib_Check.messageType = NVTX_MESSAGE_TYPE_ASCII;
       eventAttrib_Check.colorType = NVTX_COLOR_ARGB;
       eventAttrib_Check.message.ascii = nvtxMsg_Check;
-      eventAttrib_Check.color = colors[1];
+      eventAttrib_Check.color = colors[4];
 
       nvtxMarkEx(&eventAttrib_Check);
 #endif

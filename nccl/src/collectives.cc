@@ -41,12 +41,14 @@ ncclResult_t ncclAllGather(const void* sendbuff, void* recvbuff, size_t sendcoun
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllGather[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_AllGather, sizeof(nvtxMsg_AllGather), 
-                  "ncclAllGather(): comm %p, stream %p, data_size %zu, type_size %d", 
+                  "ncclAllGather(): comm %p, stream %p, data_size %zu, type_size %d, pid %d", 
                   comm, 
                   stream, 
                   sendcount * ncclTypeSize(datatype),
-                  ncclTypeSize(datatype));
+                  ncclTypeSize(datatype),
+                  pid);
 
   eventAttrib_allgather.version = NVTX_VERSION;
   eventAttrib_allgather.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -86,13 +88,15 @@ ncclResult_t ncclAllReduce(const void* sendbuff, void* recvbuff, size_t count,
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_AllReduce[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_AllReduce, sizeof(nvtxMsg_AllReduce), 
-                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d", 
+                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype),
-                  op);
+                  op,
+                  pid);
 
   eventAttrib_allreduce.version = NVTX_VERSION;
   eventAttrib_allreduce.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -138,13 +142,15 @@ ncclResult_t ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, n
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Broadcast[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_Broadcast, sizeof(nvtxMsg_Broadcast), 
-                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, type_size %d, root %d", 
+                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, type_size %d, root %d, pid %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
-                  root);
+                  root,
+                  pid);
 
   eventAttrib_broadcast.version = NVTX_VERSION;
   eventAttrib_broadcast.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -195,14 +201,16 @@ ncclResult_t ncclReduce(const void* sendbuff, void* recvbuff, size_t count,
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Reduce[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_Reduce, sizeof(nvtxMsg_Reduce), 
-                  "ncclReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, root %d", 
+                  "ncclReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, root %d, pid %d", 
                   comm, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
                   op,
-                  root);
+                  root,
+                  pid);
 
   eventAttrib_reduce.version = NVTX_VERSION;
   eventAttrib_reduce.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -249,13 +257,15 @@ ncclResult_t ncclReduceScatter(const void* sendbuff, void* recvbuff, size_t recv
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_ReduceScatter[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_ReduceScatter, sizeof(nvtxMsg_ReduceScatter), 
-                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d", 
+                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
                   comm, 
                   stream, 
                   recvcount * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
-                  op);
+                  op,
+                  pid);
 
   eventAttrib_reducescatter.version = NVTX_VERSION;
   eventAttrib_reducescatter.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -309,13 +319,15 @@ ncclResult_t ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatyp
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Send[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_Send, sizeof(nvtxMsg_Send), 
-                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank: %d", 
+                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank: %d, pid %d", 
                   comm, 
                   stream,
                   count * ncclTypeSize(datatype), 
                   ncclTypeSize(datatype), 
-                  peer);
+                  peer,
+                  pid);
 
               eventAttrib_send.version = NVTX_VERSION;
               eventAttrib_send.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -352,13 +364,15 @@ ncclResult_t ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_Recv[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_Recv, sizeof(nvtxMsg_Recv), 
-                  "ncclRecv(): comm %p, stream %p, data_size %zu, type_size %d, sender_rank %d", 
+                  "ncclRecv(): comm %p, stream %p, data_size %zu, type_size %d, sender_rank %d, pid %d", 
                   comm, 
                   stream,
                   count * ncclTypeSize(datatype), 
                   ncclTypeSize(datatype), 
-                  peer);
+                  peer,
+                  pid);
 
               eventAttrib_recv.version = NVTX_VERSION;
               eventAttrib_recv.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;

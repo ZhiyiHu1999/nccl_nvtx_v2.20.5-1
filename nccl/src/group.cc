@@ -104,8 +104,10 @@ ncclResult_t ncclGroupStart() {
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_GroupStart[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_GroupStart, sizeof(nvtxMsg_GroupStart), 
-                  "ncclGroupStart()");
+                  "ncclGroupStart(): pid %d",
+                  pid);
 
   eventAttrib_groupstart.version = NVTX_VERSION;
   eventAttrib_groupstart.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -135,8 +137,10 @@ ncclResult_t ncclGroupEnd() {
 
 #if defined(ENABLE_API_NVTX)
   char nvtxMsg_GroupEnd[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_GroupEnd, sizeof(nvtxMsg_GroupEnd), 
-                  "ncclGroupEnd()");
+                  "ncclGroupEnd(): pid %d",
+                  pid);
 
   eventAttrib_groupend.version = NVTX_VERSION;
   eventAttrib_groupend.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -225,8 +229,10 @@ static ncclResult_t doLaunches(struct ncclComm* head) {
 
 #if defined(ENABLE_API_NVTX)
             char nvtxMsg_Group[256];
+            pid_t pid = getpid();
             snprintf(nvtxMsg_Group, sizeof(nvtxMsg_Group), 
-                            "ncclLaunchKernel()");
+                            "ncclLaunchKernel(): pid %d",
+                            pid);
 
             eventAttrib_group.version = NVTX_VERSION;
             eventAttrib_group.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;

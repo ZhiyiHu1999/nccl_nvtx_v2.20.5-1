@@ -99,15 +99,17 @@ static void appendWorkElemColl(
 
 #if defined(ENABLE_ENQUEUE_NVTX)
     char nvtxMsg_WorkElemColl[256];
+    pid_t pid = getpid();
     snprintf(nvtxMsg_WorkElemColl, sizeof(nvtxMsg_WorkElemColl), 
-                    "nWarps %d count %lu redOpArg %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu", 
+                    "nWarps %d count %lu redOpArg %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu pid %d", 
                     elem->nWarps, 
                     elem->count, 
                     elem->redOpArg, 
                     elem->chunkCount, 
                     elem->workCount, 
                     elem->lastChunkCount,
-                    elem->workOffset);
+                    elem->workOffset,
+                    pid);
 
     eventAttrib_WorkElemColl.version = NVTX_VERSION;
     eventAttrib_WorkElemColl.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -632,15 +634,17 @@ static ncclResult_t addP2pToPlan(
 
 #if defined(ENABLE_ENQUEUE_NVTX)
   char nvtxMsg_WorkElemP2P[256];
+  pid_t pid = getpid();
   snprintf(nvtxMsg_WorkElemP2P, sizeof(nvtxMsg_WorkElemP2P), 
-                  "Bytes %lu nWarps %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d", 
+                  "Bytes %lu nWarps %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d pid %d", 
                   bytes, 
                   elem.nWarps, 
                   elem.peer, 
                   info.protocol, 
                   elem.countHi32,
                   elem.countLo32,
-                  elem.chunkSize);
+                  elem.chunkSize,
+                  pid);
 
   eventAttrib_WorkElemP2P.version = NVTX_VERSION;
   eventAttrib_WorkElemP2P.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -869,12 +873,14 @@ static ncclResult_t scheduleCollTasksToPlan(
 
 #if defined(ENABLE_ENQUEUE_NVTX)
       char nvtxMsg_Coll[256];
+      pid_t pid = getpid();
       snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
-                      "%ld Bytes -> Algo %d proto %d nThreads %d", 
+                      "%ld Bytes -> Algo %d proto %d nThreads %d pid %d", 
                       collInfo->nBytes, 
                       collInfo->algorithm, 
                       collInfo->protocol, 
-                      collInfo->nThreads);
+                      collInfo->nThreads,
+                      pid);
 
       eventAttrib_Coll.version = NVTX_VERSION;
       eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -1926,13 +1932,15 @@ static ncclResult_t computeCollChunkInfo(struct ncclInfo* collInfo, size_t nByte
 
 #if defined(ENABLE_ENQUEUE_NVTX)
     char nvtxMsg_CollInfo[256];
+    pid_t pid = getpid();
     snprintf(nvtxMsg_CollInfo, sizeof(nvtxMsg_CollInfo), 
-                    "chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d", 
+                    "chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d pid %d", 
                     collInfo->chunkSize, 
                     collInfo->chunkCount, 
                     collInfo->chunkSteps,
                     collInfo->sliceSteps, 
-                    collInfo->stepSize);
+                    collInfo->stepSize,
+                    pid);
 
     eventAttrib_CollInfo.version = NVTX_VERSION;
     eventAttrib_CollInfo.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -2124,8 +2132,10 @@ static ncclResult_t taskAppend(struct ncclComm* comm, struct ncclInfo* info) {
 
 #if defined(ENABLE_ENQUEUE_NVTX)
       char nvtxMsg_Check[256];
+      pid_t pid = getpid();
       snprintf(nvtxMsg_Check, sizeof(nvtxMsg_Check), 
-                      "Not executed in ncclkernel: comm->nRanks == 1");
+                      "Not executed in ncclkernel: comm->nRanks == 1 pid %d",
+                      pid);
 
       eventAttrib_Check.version = NVTX_VERSION;
       eventAttrib_Check.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;

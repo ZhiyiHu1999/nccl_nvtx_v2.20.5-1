@@ -837,6 +837,11 @@ fail:
 NCCL_PARAM(MNNVL, "MNNVL", -2);
 
 static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* parent = NULL) {
+  
+#if defined(ENABLE_INIT_NVTX)
+  pid_t pid = getpid();
+#endif
+
   // We use 2 AllGathers
   // 1. { peerInfo, comm, compCap}
   // 2. { nChannels, graphInfo, topoRanks }
@@ -1202,8 +1207,15 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* p
     INFO(NCCL_GRAPH, "Ring %02d : %d -> %d -> %d", c, comm->channels[c].ring.prev, comm->rank, comm->channels[c].ring.next);
 
 #if defined(ENABLE_INIT_NVTX)
-    snprintf(nvtxMsg_Ring, sizeof(nvtxMsg_Ring), "comm %p commHash 0x%llx Rings [%d] %d->%d->%d", 
-    comm, (unsigned long long)comm->commHash, c, comm->channels[c].ring.prev, comm->rank, comm->channels[c].ring.next);
+    snprintf(nvtxMsg_Ring, sizeof(nvtxMsg_Ring), 
+      "comm %p commHash 0x%llx Rings [%d] %d->%d->%d pid %d", 
+      comm, 
+      (unsigned long long)comm->commHash, 
+      c, 
+      comm->channels[c].ring.prev, 
+      comm->rank, 
+      comm->channels[c].ring.next,
+      pid);
 
     eventAttrib_channel.version = NVTX_VERSION;
     eventAttrib_channel.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -1216,8 +1228,17 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* p
 #endif       
 
 #if defined(ENABLE_INIT_NVTX)
-    snprintf(nvtxMsg_Tree, sizeof(nvtxMsg_Tree), "comm %p commHash 0x%llx Trees [%d] %d/%d/%d->%d->%d", 
-    comm, (unsigned long long)comm->commHash, c, tree->down[0], tree->down[1], tree->down[2], rank, tree->up);
+    snprintf(nvtxMsg_Tree, 
+      sizeof(nvtxMsg_Tree), "comm %p commHash 0x%llx Trees [%d] %d/%d/%d->%d->%d pid %d", 
+      comm, 
+      (unsigned long long)comm->commHash, 
+      c, 
+      tree->down[0], 
+      tree->down[1], 
+      tree->down[2], 
+      rank, 
+      tree->up,
+      pid);
 
     eventAttrib_channel.version = NVTX_VERSION;
     eventAttrib_channel.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -1309,11 +1330,12 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* p
 #if defined(ENABLE_INIT_NVTX)
   char nvtxMsg_Channel[256];
   snprintf(nvtxMsg_Channel, sizeof(nvtxMsg_Channel), 
-  "%d coll channels, %d nvls channels, %d p2p channels, %d p2p channels per peer", 
+  "%d coll channels, %d nvls channels, %d p2p channels, %d p2p channels per peer, pid %d", 
   comm->nChannels, 
   comm->nvlsChannels, 
   comm->p2pnChannels, 
-  comm->p2pnChannelsPerPeer);
+  comm->p2pnChannelsPerPeer,
+  pid);
 
   eventAttrib_channel.version = NVTX_VERSION;
   eventAttrib_channel.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
@@ -1528,6 +1550,11 @@ fail:
 }
 
 static ncclResult_t ncclCommInitRankFunc(struct ncclAsyncJob* job_) {
+
+#if defined(ENABLE_INIT_NVTX)
+  pid_t pid = getpid();
+#endif
+
   struct ncclCommInitRankAsyncJob* job = (struct ncclCommInitRankAsyncJob*)job_;
   ncclComm_t comm = job->comm;
   ncclResult_t res = ncclSuccess;
@@ -1571,8 +1598,13 @@ static ncclResult_t ncclCommInitRankFunc(struct ncclAsyncJob* job_) {
 #if defined(ENABLE_INIT_NVTX)
   char nvtxMsg_Init[256];
 
-  snprintf(nvtxMsg_Init, sizeof(nvtxMsg_Init), "comm %p commId 0x%llx rank %d nranks %d", 
-  comm, (unsigned long long)hashUniqueId(job->commId), comm->rank, comm->nRanks);
+  snprintf(nvtxMsg_Init, sizeof(nvtxMsg_Init), 
+  "comm %p commId 0x%llx rank %d nranks %d pid %d", 
+  comm, 
+  (unsigned long long)hashUniqueId(job->commId), 
+  comm->rank, 
+  comm->nRanks,
+  pid);
 
   eventAttrib_init.version = NVTX_VERSION;
   eventAttrib_init.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;

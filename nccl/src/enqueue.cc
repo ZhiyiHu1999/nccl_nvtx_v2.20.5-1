@@ -32,7 +32,7 @@
     0xffe91e63, 
     0xffcddc39, 
     0xff8bc34a};
-  nvtxEventAttributes_t eventAttrib_Coll = {0};
+  // nvtxEventAttributes_t eventAttrib_Coll = {0};
   nvtxEventAttributes_t eventAttrib_Check = {0};
 
   nvtxEventAttributes_t eventAttrib_WorkElemColl = {0};
@@ -101,10 +101,9 @@ static void appendWorkElemColl(
     char nvtxMsg_WorkElemColl[256];
     pid_t pid = getpid();
     snprintf(nvtxMsg_WorkElemColl, sizeof(nvtxMsg_WorkElemColl), 
-                    "nWarps %d count %lu redOpArg %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu pid %d", 
+                    "nWarps %d count %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu pid %d", 
                     elem->nWarps, 
                     elem->count, 
-                    elem->redOpArg, 
                     elem->chunkCount, 
                     elem->workCount, 
                     elem->lastChunkCount,
@@ -636,9 +635,10 @@ static ncclResult_t addP2pToPlan(
   char nvtxMsg_WorkElemP2P[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_WorkElemP2P, sizeof(nvtxMsg_WorkElemP2P), 
-                  "Bytes %lu nWarps %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d pid %d", 
+                  "Bytes %lu nWarps %d p2pType %d peer %d proto %d countHi32 %u countLo32 %u chunkSize %d pid %d", 
                   bytes, 
                   elem.nWarps, 
+                  elem.p2pType,
                   elem.peer, 
                   info.protocol, 
                   elem.countHi32,
@@ -871,26 +871,26 @@ static ncclResult_t scheduleCollTasksToPlan(
         }
       } // end of aggInfo
 
-#if defined(ENABLE_ENQUEUE_NVTX)
-      char nvtxMsg_Coll[256];
-      pid_t pid = getpid();
-      snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
-                      "%ld Bytes -> Algo %d proto %d nThreads %d pid %d", 
-                      collInfo->nBytes, 
-                      collInfo->algorithm, 
-                      collInfo->protocol, 
-                      collInfo->nThreads,
-                      pid);
+// #if defined(ENABLE_ENQUEUE_NVTX)
+//       char nvtxMsg_Coll[256];
+//       pid_t pid = getpid();
+//       snprintf(nvtxMsg_Coll, sizeof(nvtxMsg_Coll), 
+//                       "%ld Bytes -> Algo %d proto %d nThreads %d pid %d", 
+//                       collInfo->nBytes, 
+//                       collInfo->algorithm, 
+//                       collInfo->protocol, 
+//                       collInfo->nThreads,
+//                       pid);
 
-      eventAttrib_Coll.version = NVTX_VERSION;
-      eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-      eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
-      eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
-      eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
-      eventAttrib_Coll.color = colors[2];
+//       eventAttrib_Coll.version = NVTX_VERSION;
+//       eventAttrib_Coll.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+//       eventAttrib_Coll.messageType = NVTX_MESSAGE_TYPE_ASCII;
+//       eventAttrib_Coll.colorType = NVTX_COLOR_ARGB;
+//       eventAttrib_Coll.message.ascii = nvtxMsg_Coll;
+//       eventAttrib_Coll.color = colors[2];
 
-      nvtxMarkEx(&eventAttrib_Coll);
-#endif 
+//       nvtxMarkEx(&eventAttrib_Coll);
+// #endif 
 
       if (collInfo->algorithm == NCCL_ALGO_NVLS || collInfo->algorithm == NCCL_ALGO_NVLS_TREE) {
         usableChannels = std::max(usableChannels, comm->nvlsChannels);
@@ -1934,7 +1934,16 @@ static ncclResult_t computeCollChunkInfo(struct ncclInfo* collInfo, size_t nByte
     char nvtxMsg_CollInfo[256];
     pid_t pid = getpid();
     snprintf(nvtxMsg_CollInfo, sizeof(nvtxMsg_CollInfo), 
-                    "chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d pid %d", 
+                    "collType %d root %d redOp %d algo %d proto %d comm %p stream %p data_size %zu type_size %d chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d pid %d", 
+                    collInfo->coll,
+                    collInfo->root,
+                    collInfo->op, 
+                    collInfo->algorithm,
+                    collInfo->protocol,
+                    collInfo->comm,
+                    collInfo->stream,
+                    collInfo->count * ncclTypeSize(collInfo->datatype), 
+                    ncclTypeSize(collInfo->datatype), 
                     collInfo->chunkSize, 
                     collInfo->chunkCount, 
                     collInfo->chunkSteps,

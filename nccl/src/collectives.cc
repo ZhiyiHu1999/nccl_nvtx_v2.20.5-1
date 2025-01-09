@@ -321,7 +321,7 @@ ncclResult_t ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatyp
   char nvtxMsg_Send[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_Send, sizeof(nvtxMsg_Send), 
-                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank: %d, pid %d", 
+                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank %d, pid %d", 
                   comm, 
                   stream,
                   count * ncclTypeSize(datatype), 

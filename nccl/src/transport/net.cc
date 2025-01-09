@@ -1176,9 +1176,10 @@ static ncclResult_t sendProxyProgress(struct ncclProxyState* proxyState, struct 
         int done;
         int size;
         int buffSlot = (sub->base+sub->done)%NCCL_STEPS;
-        int test_seq = sub->done;
 
 #if defined(ENABLE_NET_NVTX)
+        int test_seq = sub->done;
+
         char nvtxMsg[256];
         snprintf(nvtxMsg, sizeof(nvtxMsg), 
             "ncclNetSendTest()");

@@ -43,8 +43,8 @@ ncclResult_t ncclAllGather(const void* sendbuff, void* recvbuff, size_t sendcoun
   char nvtxMsg_AllGather[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_AllGather, sizeof(nvtxMsg_AllGather), 
-                  "ncclAllGather(): comm %p, stream %p, data_size %zu, type_size %d, pid %d", 
-                  comm, 
+                  "ncclAllGather(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream, 
                   sendcount * ncclTypeSize(datatype),
                   ncclTypeSize(datatype),
@@ -90,8 +90,8 @@ ncclResult_t ncclAllReduce(const void* sendbuff, void* recvbuff, size_t count,
   char nvtxMsg_AllReduce[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_AllReduce, sizeof(nvtxMsg_AllReduce), 
-                  "ncclAllReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
-                  comm, 
+                  "ncclAllReduce(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype),
@@ -144,8 +144,8 @@ ncclResult_t ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, n
   char nvtxMsg_Broadcast[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_Broadcast, sizeof(nvtxMsg_Broadcast), 
-                  "ncclBroadcast(): comm %p, stream %p, data_size %zu, type_size %d, root %d, pid %d", 
-                  comm, 
+                  "ncclBroadcast(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, root %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
@@ -203,8 +203,8 @@ ncclResult_t ncclReduce(const void* sendbuff, void* recvbuff, size_t count,
   char nvtxMsg_Reduce[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_Reduce, sizeof(nvtxMsg_Reduce), 
-                  "ncclReduce(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, root %d, pid %d", 
-                  comm, 
+                  "ncclReduce(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, red_op %d, root %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream, 
                   count * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
@@ -259,8 +259,8 @@ ncclResult_t ncclReduceScatter(const void* sendbuff, void* recvbuff, size_t recv
   char nvtxMsg_ReduceScatter[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_ReduceScatter, sizeof(nvtxMsg_ReduceScatter), 
-                  "ncclReduceScatter(): comm %p, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
-                  comm, 
+                  "ncclReduceScatter(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, red_op %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream, 
                   recvcount * ncclTypeSize(datatype),
                   ncclTypeSize(datatype), 
@@ -321,8 +321,8 @@ ncclResult_t ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatyp
   char nvtxMsg_Send[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_Send, sizeof(nvtxMsg_Send), 
-                  "ncclSend(): comm %p, stream %p, data_size %zu, type_size %d, receiver_rank %d, pid %d", 
-                  comm, 
+                  "ncclSend(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, receiver_rank %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream,
                   count * ncclTypeSize(datatype), 
                   ncclTypeSize(datatype), 
@@ -366,8 +366,8 @@ ncclResult_t ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int
   char nvtxMsg_Recv[256];
   pid_t pid = getpid();
   snprintf(nvtxMsg_Recv, sizeof(nvtxMsg_Recv), 
-                  "ncclRecv(): comm %p, stream %p, data_size %zu, type_size %d, sender_rank %d, pid %d", 
-                  comm, 
+                  "ncclRecv(): commHash 0x%llx, stream %p, data_size %zu, type_size %d, sender_rank %d, pid %d", 
+                  (unsigned long long)comm->commHash, 
                   stream,
                   count * ncclTypeSize(datatype), 
                   ncclTypeSize(datatype), 

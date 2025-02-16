@@ -1208,8 +1208,7 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* p
 
 #if defined(ENABLE_INIT_NVTX)
     snprintf(nvtxMsg_Ring, sizeof(nvtxMsg_Ring), 
-      "comm %p commHash 0x%llx Rings [%d] %d->%d->%d pid %d", 
-      comm, 
+      "commHash 0x%llx Rings [%d] %d->%d->%d pid %d", 
       (unsigned long long)comm->commHash, 
       c, 
       comm->channels[c].ring.prev, 
@@ -1229,8 +1228,7 @@ static ncclResult_t initTransportsRank(struct ncclComm* comm, struct ncclComm* p
 
 #if defined(ENABLE_INIT_NVTX)
     snprintf(nvtxMsg_Tree, 
-      sizeof(nvtxMsg_Tree), "comm %p commHash 0x%llx Trees [%d] %d/%d/%d->%d->%d pid %d", 
-      comm, 
+      sizeof(nvtxMsg_Tree), "commHash 0x%llx Trees [%d] %d/%d/%d->%d->%d pid %d", 
       (unsigned long long)comm->commHash, 
       c, 
       tree->down[0], 
@@ -1599,8 +1597,8 @@ static ncclResult_t ncclCommInitRankFunc(struct ncclAsyncJob* job_) {
   char nvtxMsg_Init[256];
 
   snprintf(nvtxMsg_Init, sizeof(nvtxMsg_Init), 
-  "comm %p commId 0x%llx rank %d nranks %d pid %d", 
-  comm, 
+  "commHash 0x%llx commId 0x%llx rank %d nranks %d pid %d", 
+  (unsigned long long)comm->commHash, 
   (unsigned long long)hashUniqueId(job->commId), 
   comm->rank, 
   comm->nRanks,

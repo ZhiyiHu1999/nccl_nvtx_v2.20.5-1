@@ -1934,13 +1934,13 @@ static ncclResult_t computeCollChunkInfo(struct ncclInfo* collInfo, size_t nByte
     char nvtxMsg_CollInfo[256];
     pid_t pid = getpid();
     snprintf(nvtxMsg_CollInfo, sizeof(nvtxMsg_CollInfo), 
-                    "collType %d root %d redOp %d algo %d proto %d comm %p stream %p data_size %zu type_size %d chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d pid %d", 
+                    "collType %d root %d redOp %d algo %d proto %d commHash 0x%llx stream %p data_size %zu type_size %d chunkSize %d chunkCount %d chunkSteps %d sliceSteps %d stepSize %d pid %d", 
                     collInfo->coll,
                     collInfo->root,
                     collInfo->op, 
                     collInfo->algorithm,
                     collInfo->protocol,
-                    collInfo->comm,
+                    (unsigned long long)collInfo->comm->commHash,
                     collInfo->stream,
                     collInfo->count * ncclTypeSize(collInfo->datatype), 
                     ncclTypeSize(collInfo->datatype), 

@@ -10,6 +10,7 @@
 
 srun --environment=megatron bash -c "
 cd /users/zhu/nccl_nvtx_v2.20.5-1/nccl
+make clean
 export NVTX_FLAGS=\"-DENABLE_API_NVTX -DENABLE_INIT_NVTX -DENABLE_ENQUEUE_NVTX\"
 export TRACING_FLAGS=\"\$NVTX_FLAGS\"
 make -j src.build CUDA_HOME=/usr/local/cuda NVCC_GENCODE=\"-gencode=arch=compute_90,code=sm_90\" TRACING_FLAGS=\"\$TRACING_FLAGS\"

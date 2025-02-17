@@ -11,4 +11,6 @@
 srun --environment=megatron bash -c "
     which nvcc
     nvidia-smi --query-gpu=name,compute_cap --format=csv
+    which nsys
+    nsys --version
 "

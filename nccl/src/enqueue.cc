@@ -101,13 +101,15 @@ static void appendWorkElemColl(
     char nvtxMsg_WorkElemColl[256];
     pid_t pid = getpid();
     snprintf(nvtxMsg_WorkElemColl, sizeof(nvtxMsg_WorkElemColl), 
-                    "nWarps %d count %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu pid %d", 
+                    "nWarps %d count %lu chunkCount %lu workCount %lu lastChunkCount %lu workOffset %lu sendbuff %lu recvbuff %lu pid %d", 
                     elem->nWarps, 
                     elem->count, 
                     elem->chunkCount, 
                     elem->workCount, 
                     elem->lastChunkCount,
                     elem->workOffset,
+                    (uintptr_t)elem->sendbuff,
+                    (uintptr_t)elem->recvbuff,
                     pid);
 
     eventAttrib_WorkElemColl.version = NVTX_VERSION;

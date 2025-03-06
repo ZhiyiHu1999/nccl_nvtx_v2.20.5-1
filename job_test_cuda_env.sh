@@ -8,7 +8,7 @@
 #SBATCH --output=check_cuda.%j.o
 #SBATCH --error=check_cuda.%j.e
 
-srun --environment=megatron bash -c "
+srun --mpi=pmi2 --environment=megatron bash -c "
     which nvcc
     nvidia-smi --query-gpu=name,compute_cap --format=csv
     which nsys
